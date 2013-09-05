@@ -61,7 +61,15 @@ $validated = isUserInputValid($bugReport);
 /////////////////////// Form definition ////////////////////////
 if (!(($tried != NULL && $tried == 'yes') && $validated)) {
 	?>	<div class="BugReport">
-	      <h2>Cytoscape Bug Report</h2>
+        <h1>Cytoscape Bug Report Form</h1>
+        <h2>Please Read before Submitting New Bug</h2>
+            <p>
+                Please use this form to report <strong>reproducible</strong> Cytoscape bugs. 
+                It is helpful if you can confirm that the bug is reproducible on another computer. 
+                Please use the Cytoscape <a href="https://groups.google.com/forum/?hl=en_US/#!forum/cytoscape-helpdesk">helpdesk</a> 
+                instead to ask general questions about Cytoscape, including questions about 
+                Cytoscape installation problems and installing apps.
+            </p>
 	<?php
 		showForm($bugReport);
 	?>
@@ -415,18 +423,16 @@ function sendNotificationEmail($bugReport, $bug_id_redmine) {
 
 function showForm($userInput) {
 	?>
-      <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post" enctype="multipart/form-data" name="submitbug" id="form1">
-<label for="tfName">Name</label>
-                    <input name="tfName" type="text" id="tfName" value="<?php if (isset($userInput['name'])) echo $userInput['name']; ?>" />
-        <div>   
+    <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post" enctype="multipart/form-data" name="submitbug" id="form1">
+        <label for="tfName">Name</label>
+        <input name="tfName" type="text" id="tfName" value="<?php if (isset($userInput['name'])) echo $userInput['name']; ?>" />
+        <div>
 
         <div>
-          
           <label for="tfEmail">Email</label>
           <input name="tfEmail" type="text" id="tfEmail" value="<?php if (isset($userInput['email'])) echo $userInput['email']; ?>" />
           
-          * Optional,
-          If you want feedback 
+          * Optional, If you want feedback 
           
         </div>
 
