@@ -6,10 +6,16 @@
 
 <?php
 
+
+
+	$remote_ip= trim($_SERVER['REMOTE_ADDR']);
+
+	error_log("Connecting from ".$remote_ip."\n", 3, "debug.log");
 // check black list of IP address
 $isIPInBlackList = isIPAddressInBlackList();
 
 if ($isIPInBlackList){
+	error_log("address in black list: ".$isIPInBlackList."\n", 3, "debug.log");
 	return;
 }
 
@@ -53,7 +59,10 @@ $bugReport = NULL;
 // database
 
 //include "formUserInput_remember.inc";
+error_log("fetching form\n", 3, "debug.log");
 $bugReport = getBugReportFromForm($_GET, $_POST, $_FILES, $_SERVER);
+error_log("subject: ".$bugReport['cysubject']."\n", 3, "debug.log");
+error_log(date(DATE_RFC2822)." bugReport: ".toJSON($bugReport)."\n", 3, "debug.log");
 
 //////////////////////// Form validation ////////////////////////
 $validated = isUserInputValid($bugReport);
@@ -104,6 +113,9 @@ else {
 		addReporter2BugWatch($bug_id_redmine, $bugReport['email']);		
 		sendNotificationEmail($bugReport, $bug_id_redmine);
 	} 
+	else {
+		error_log("mode: ".$mode."\n", 3, "debug.log");
+	}
 }
 ?>
 
@@ -201,10 +213,14 @@ function getBugID_redmine() {
 
 
 function submitNewBug2Remine( $bugReport, $submitResult) {
+	error_log("Starting to submit bug\n", 3, "debug.log");
 	// Save the bug report in a tmp file 'newBug.jason' in jason format
 	$myFile = "_newBug.json";
 	$fh = fopen($myFile, 'w') or die("can't open file");
 	
+	$json = toJSON($bugReport, $submitResult);
+	
+	/*
 	$description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
 	
 	if ($submitResult != null){
@@ -212,23 +228,57 @@ function submitNewBug2Remine( $bugReport, $submitResult) {
 	}
 
 	$description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
-		
+
+	$subject = $bugReport['cysubject'];
+	if ($subject != null) {
+		$subject = trim($subject);
+	}
+	if ($subject == null || $subject == ""){
+		$subject = "no subject";
+	}		
 	$json = 	
 		"{
 				\"issue\": {
 				\"project_id\": \"cytoscape3\",
-				\"subject\": \"".clean_unwanted_characters($bugReport['cysubject'])."\",
+				\"subject\": \"".clean_unwanted_characters($subject)."\",
 				\"description\": \"".clean_unwanted_characters($description)."\"
 				}
 		}";	
-	
-		
+*/	
+	error_log("Submitting bug ".$json."\n", 3, "debug.log");		
 	fwrite($fh, $json);
 		
 	fclose($fh);
 	
 	// submit the new bug to redmine (Cytosape bug tracker)
 	system("./run_curl.sh > _reportOutput.txt");
+}
+
+function toJSON( $bugReport, $submitResult) {
+	$description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
+	
+	if ($submitResult != null){
+		$description = $description."\\n\\n\\nAttached file is at ".$submitResult."\\n\\n\\n";
+	}
+
+	$description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
+
+	$subject = $bugReport['cysubject'];
+	if ($subject != null) {
+		$subject = trim($subject);
+	}
+	if ($subject == null || $subject == ""){
+		$subject = "no subject";
+	}		
+	$json = 	
+		"{
+				\"issue\": {
+				\"project_id\": \"cytoscape3\",
+				\"subject\": \"".clean_unwanted_characters($subject)."\",
+				\"description\": \"".clean_unwanted_characters($description)."\"
+				}
+		}";	
+	return $json;
 }
 
 
@@ -253,7 +303,16 @@ function isUserInputValid($userInput) {
 		return false;
 	}
 	
-	if ($userInput['cyversion'] != null and strpos($userInput['cyversion'],'3.0') !== false){
+	//Required Fields
+	//name
+	//email
+	//cyversion
+	//cysubject
+	//os
+	//description
+	
+	if($userInput['name'] != null and $userInput['email'] != null and $userInput['cyversion'] != null and 
+		$userInput['cysubject'] != null and $userInput['os'] != null and $userInput['description'] != null){
 		return true;
 	}
 	return false;
@@ -405,9 +464,8 @@ function sendNotificationEmail($bugReport, $bug_id_redmine) {
 	$body = $prefix.stripslashes($bugReport['description'])."\n\nBug URL: http://code.cytoscape.org/redmine/issues/".$bug_id_redmine;
 	
 	?>
-	Thank you for submitting bug report to Cytoscape, Cytoscape staff will review your report.
-	After your report is verified, Cytoscape staff will fix it in the next release of Cytoscape.
-	Thank you again for making better Cytoscape. 
+	Your bug report has been submitted and Cytoscape staff will review your report.
+	Thank you for helping to make Cytoscape better!
 	<?php
 	
 	$headers = "From: " . $from . "\r\n"; 
@@ -423,6 +481,7 @@ function sendNotificationEmail($bugReport, $bug_id_redmine) {
 
 function showForm($userInput) {
 	?>
+	<p style="color:red;">All fields are required, attachment is optional.</p>
     <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post" enctype="multipart/form-data" name="submitbug" id="form1">
         <label for="tfName">Name</label>
         <input name="tfName" type="text" id="tfName" value="<?php if (isset($userInput['name'])) echo $userInput['name']; ?>" />
@@ -431,8 +490,6 @@ function showForm($userInput) {
         <div>
           <label for="tfEmail">Email</label>
           <input name="tfEmail" type="text" id="tfEmail" value="<?php if (isset($userInput['email'])) echo $userInput['email']; ?>" />
-          
-          * Optional, If you want feedback 
           
         </div>
 

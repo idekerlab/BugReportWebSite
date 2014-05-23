@@ -3,17 +3,18 @@
 
 $file_id = null;
 if (isset ($_GET['file_id'])) {
-		$file_id = ($_GET['file_id']);
+		$file_id = mysql_real_escape_string($_GET['file_id']);
 }
 else {
 	exit("File ID unknow!");
 }
 
 
+
 $connection = getDBConnection(NULL);// user permission
 
 $query = "SELECT * FROM attached_files ".
-			"WHERE file_auto_id = $file_id";
+			"WHERE file_auto_id = '$file_id'";
 
 // Run the query
 if (!($result = @ mysql_query($query,$connection)))
