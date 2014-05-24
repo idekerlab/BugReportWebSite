@@ -1,6 +1,6 @@
-<?php 
-	//include "logininfo.inc";
-	include "functions.php"; 
+<?php
+//include "logininfo.inc";
+include "functions.php";
 ?>
 
 
@@ -8,15 +8,15 @@
 
 
 
-	$remote_ip= trim($_SERVER['REMOTE_ADDR']);
+$remote_ip= trim($_SERVER['REMOTE_ADDR']);
 
-	error_log("Connecting from ".$remote_ip."\n", 3, "debug.log");
+error_log("Connecting from ".$remote_ip."\n", 3, "debug.log");
 // check black list of IP address
 $isIPInBlackList = isIPAddressInBlackList();
 
 if ($isIPInBlackList){
-	error_log("address in black list: ".$isIPInBlackList."\n", 3, "debug.log");
-	return;
+    error_log("address in black list: ".$isIPInBlackList."\n", 3, "debug.log");
+    return;
 }
 
 // mode = 'new', Data is submited by user
@@ -41,7 +41,7 @@ showPageHeader($pageTitle);
 
 $tried = NULL;
 if (isset ($_POST['tried'])) {
-	$tried = 'yes';
+    $tried = 'yes';
 }
 
 $connection = getDBConnection($mode);
@@ -69,92 +69,92 @@ $validated = isUserInputValid($bugReport);
 
 /////////////////////// Form definition ////////////////////////
 if (!(($tried != NULL && $tried == 'yes') && $validated)) {
-	?>	<div class="BugReport">
+    ?>	<div class="BugReport">
         <h1>Cytoscape Bug Report Form</h1>
         <h2>Please Read before Submitting New Bug</h2>
-            <p>
-                Please use this form to report <strong>reproducible</strong> Cytoscape bugs. 
-                It is helpful if you can confirm that the bug is reproducible on another computer. 
-                Please use the Cytoscape <a href="https://groups.google.com/forum/?hl=en_US/#!forum/cytoscape-helpdesk">helpdesk</a> 
-                instead to ask general questions about Cytoscape, including questions about 
-                Cytoscape installation problems and installing apps.
-            </p>
-	<?php
-		showForm($bugReport);
-	?>
-	    </div>
-	<?php 
+        <p>
+            Please use this form to report <strong>reproducible</strong> Cytoscape bugs.
+            It is helpful if you can confirm that the bug is reproducible on another computer.
+            Please use the Cytoscape <a href="https://groups.google.com/forum/?hl=en_US/#!forum/cytoscape-helpdesk">helpdesk</a>
+            instead to ask general questions about Cytoscape, including questions about
+            Cytoscape installation problems and installing apps.
+        </p>
+        <?php
+        showForm($bugReport);
+        ?>
+    </div>
+<?php
 }
 else {
-	////////////////////////// form processing /////////////////////////
-	// if mode = 'new', takes the details of the bug from user with status = 'new'.
-	// if mode = 'Edit', update the bug info in bugs DB
+    ////////////////////////// form processing /////////////////////////
+    // if mode = 'new', takes the details of the bug from user with status = 'new'.
+    // if mode = 'Edit', update the bug info in bugs DB
 
-	// In case of edit, do updating
+    // In case of edit, do updating
 // 	if ($mode == 'edit') {
 // 		updateBug($connection, $bugReport);
 // 	}
-	
-	if ($mode == 'new') {
-		
-		// check if the email is in black list
+
+    if ($mode == 'new') {
+
+        // check if the email is in black list
 // 		if (isEmailInBlackList($bugReport['email'])) {
 // 			return;
 // 		}
-		
-		//process the data and Save the data into DB.		
-		//$submitResult1 = submitNewBug($connection, $bugReport);
-		//submitNewBug2Remine( $bugReport, $submitResult1);
-		
-		$attachedFileURL = loadAttachment2DB($connection, $bugReport);
-				
-		submitNewBug2Remine( $bugReport, $attachedFileURL);		
-		$bug_id_redmine = getBugID_redmine(); 
-		addReporter2BugWatch($bug_id_redmine, $bugReport['email']);		
-		sendNotificationEmail($bugReport, $bug_id_redmine);
-	} 
-	else {
-		error_log("mode: ".$mode."\n", 3, "debug.log");
-	}
+
+        //process the data and Save the data into DB.
+        //$submitResult1 = submitNewBug($connection, $bugReport);
+        //submitNewBug2Remine( $bugReport, $submitResult1);
+
+        $attachedFileURL = loadAttachment2DB($connection, $bugReport);
+
+        submitNewBug2Remine( $bugReport, $attachedFileURL);
+        $bug_id_redmine = getBugID_redmine();
+        addReporter2BugWatch($bug_id_redmine, $bugReport['email']);
+        sendNotificationEmail($bugReport, $bug_id_redmine);
+    }
+    else {
+        error_log("mode: ".$mode."\n", 3, "debug.log");
+    }
 }
 ?>
 
-<?php 
-	showPageTail();	
-	///////////////////// End of page ////////////////////////////////////
+<?php
+showPageTail();
+///////////////////// End of page ////////////////////////////////////
 ?>
 
 
-<?php 
+<?php
 
 function loadAttachment2DB($connection, $bugReport){
-	$attachedFileURL = null;
+    $attachedFileURL = null;
 
-	// load attached file
-	$file_auto_id = null;
+    // load attached file
+    $file_auto_id = null;
 
-	if ($bugReport['attachedFiles'] != NULL && $bugReport['attachedFiles']['name'] != NULL){
+    if ($bugReport['attachedFiles'] != NULL && $bugReport['attachedFiles']['name'] != NULL){
 
-		$name = mysql_real_escape_string($bugReport['attachedFiles']['name']);
-		$type = $bugReport['attachedFiles']['type'];
-		$md5 = $bugReport['attachedFiles']['md5'];
-		$content = $bugReport['attachedFiles']['fileContent'];
+        $name = mysql_real_escape_string($bugReport['attachedFiles']['name']);
+        $type = $bugReport['attachedFiles']['type'];
+        $md5 = $bugReport['attachedFiles']['md5'];
+        $content = $bugReport['attachedFiles']['fileContent'];
 
-		$dbQuery = "INSERT INTO attached_files VALUES ";
-		$dbQuery .= "(0, '$name', '$type', '$content', '$md5')";
-		// Run the query
-		if (!(@ mysql_query($dbQuery, $connection)))
-			showerror();
+        $dbQuery = "INSERT INTO attached_files VALUES ";
+        $dbQuery .= "(0, '$name', '$type', '$content', '$md5')";
+        // Run the query
+        if (!(@ mysql_query($dbQuery, $connection)))
+            showerror();
 
-		$file_auto_id = mysql_insert_id($connection);
-	}
+        $file_auto_id = mysql_insert_id($connection);
+    }
 
-	if ($file_auto_id != null){
-		// There are attachment in this bug report
-		$attachedFileURL = "http://chianti.ucsd.edu/cyto_web/bugreport/attachedFiledownload.php?file_id=".$file_auto_id;
-	}
+    if ($file_auto_id != null){
+        // There are attachment in this bug report
+        $attachedFileURL = "http://chianti.ucsd.edu/cyto_web/bugreport/attachedFiledownload.php?file_id=".$file_auto_id;
+    }
 
-	return $attachedFileURL;
+    return $attachedFileURL;
 }
 
 
@@ -162,17 +162,17 @@ function loadAttachment2DB($connection, $bugReport){
 
 function addReporter2BugWatch($bug_id_redmine, $reporterEmail){
 
-	$url = "http://code.cytoscape.org/redmine/issues/".$bug_id_redmine."/add_cc?email=".$reporterEmail."&key=e0ea356348ee0786edd64a56bb3a87eb8a07b082";
+    $url = "http://code.cytoscape.org/redmine/issues/".$bug_id_redmine."/add_cc?email=".$reporterEmail."&key=e0ea356348ee0786edd64a56bb3a87eb8a07b082";
 
-	$ch = curl_init($url);
-	$fp = fopen("_addReporter2bugWatch.txt", "w");
+    $ch = curl_init($url);
+    $fp = fopen("_addReporter2bugWatch.txt", "w");
 
-	curl_setopt($ch, CURLOPT_FILE, $fp);
-	curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
 
-	curl_exec($ch);
-	curl_close($ch);
-	fclose($fp);
+    curl_exec($ch);
+    curl_close($ch);
+    fclose($fp);
 }
 
 // function isEmailInBlackList($email) {
@@ -190,101 +190,102 @@ function addReporter2BugWatch($bug_id_redmine, $reporterEmail){
 // }
 
 function isIPAddressInBlackList(){
-	
-	$remote_ip_address= trim($_SERVER['REMOTE_ADDR']);
-		
-	$file_handle = fopen("_blacklist_ip.txt", "r");
-	while (!feof($file_handle)) {
-		$line = trim(fgets($file_handle));		
-		if(strcasecmp($remote_ip_address, $line) == 0){
-			return true;
-		}
-	}
-	fclose($file_handle);
-	return false;
+
+    $remote_ip_address= trim($_SERVER['REMOTE_ADDR']);
+
+    $file_handle = fopen("_blacklist_ip.txt", "r");
+    while (!feof($file_handle)) {
+        $line = trim(fgets($file_handle));
+        if(strcasecmp($remote_ip_address, $line) == 0){
+            return true;
+        }
+    }
+    fclose($file_handle);
+    return false;
 }
 
 
 function getBugID_redmine() {
-	$str = file_get_contents("_reportOutput.txt");
-	$obj = json_decode($str);
-	return $obj->{'issue'}->{'id'};
+    $str = file_get_contents("_reportOutput.txt");
+    $obj = json_decode($str);
+    return $obj->{'issue'}->{'id'};
 }
 
 
 function submitNewBug2Remine( $bugReport, $submitResult) {
-	error_log("Starting to submit bug\n", 3, "debug.log");
-	// Save the bug report in a tmp file 'newBug.jason' in jason format
-	$myFile = "_newBug.json";
-	$fh = fopen($myFile, 'w') or die("can't open file");
-	
-	$json = toJSON($bugReport, $submitResult);
-	
-	/*
-	$description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
-	
-	if ($submitResult != null){
-		$description = $description."\\n\\n\\nAttached file is at ".$submitResult."\\n\\n\\n";
-	}
+    error_log("Starting to submit bug\n", 3, "debug.log");
+    // Save the bug report in a tmp file 'newBug.jason' in jason format
+    $myFile = "_newBug.json";
+    $fh = fopen($myFile, 'w') or die("can't open file _newBug.json");
 
-	$description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
+    $json = toJSON($bugReport, $submitResult);
 
-	$subject = $bugReport['cysubject'];
-	if ($subject != null) {
-		$subject = trim($subject);
-	}
-	if ($subject == null || $subject == ""){
-		$subject = "no subject";
-	}		
-	$json = 	
-		"{
-				\"issue\": {
-				\"project_id\": \"cytoscape3\",
-				\"subject\": \"".clean_unwanted_characters($subject)."\",
-				\"description\": \"".clean_unwanted_characters($description)."\"
-				}
-		}";	
-*/	
-	error_log("Submitting bug ".$json."\n", 3, "debug.log");		
-	fwrite($fh, $json);
-		
-	fclose($fh);
-	
-	// submit the new bug to redmine (Cytosape bug tracker)
-	system("./run_curl.sh > _reportOutput.txt");
+    /*
+    $description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
+
+    if ($submitResult != null){
+        $description = $description."\\n\\n\\nAttached file is at ".$submitResult."\\n\\n\\n";
+    }
+
+    $description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
+
+    $subject = $bugReport['cysubject'];
+    if ($subject != null) {
+        $subject = trim($subject);
+    }
+    if ($subject == null || $subject == ""){
+        $subject = "no subject";
+    }
+    $json =
+        "{
+                \"issue\": {
+                \"project_id\": \"cytoscape3\",
+                \"subject\": \"".clean_unwanted_characters($subject)."\",
+                \"description\": \"".clean_unwanted_characters($description)."\"
+                }
+        }";
+*/
+    error_log("Submitting bug ".$json."\n", 3, "debug.log");
+    fwrite($fh, $json);
+
+    fclose($fh);
+
+    // submit the new bug to redmine (Cytosape bug tracker)
+    system("./run_curl.sh > _reportOutput.txt");
 }
 
 function toJSON( $bugReport, $submitResult) {
-	$description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
-	
-	if ($submitResult != null){
-		$description = $description."\\n\\n\\nAttached file is at ".$submitResult."\\n\\n\\n";
-	}
+    $description = '\\nOS: '.$bugReport['os'].'\nCytoscape version: '.$bugReport['cyversion'].'\\n\\n'.$bugReport['description'];
 
-	$description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
+    if ($submitResult != null){
+        $description = $description."\\n\\n\\nAttached file is at ".$submitResult."\\n\\n\\n";
+    }
 
-	$subject = $bugReport['cysubject'];
-	if ($subject != null) {
-		$subject = trim($subject);
-	}
-	if ($subject == null || $subject == ""){
-		$subject = "no subject";
-	}		
-	$json = 	
-		"{
-				\"issue\": {
-				\"project_id\": \"cytoscape3\",
-				\"subject\": \"".clean_unwanted_characters($subject)."\",
+    $description = $description.'\\n\\n\\nReported by: '.$bugReport['name']; //.'\nE-mail: '.$bugReport['email'];
+    $description = $description.'\\nEmail: '.$bugReport['email'];
+
+    $subject = $bugReport['cysubject'];
+    if ($subject != null) {
+        $subject = trim($subject);
+    }
+    if ($subject == null || $subject == ""){
+        $subject = "no subject";
+    }
+    $json =
+        "{
+                \"issue\": {
+                \"project_id\": \"cytoscape3\",
+                \"subject\": \"".clean_unwanted_characters($subject)."\",
 				\"description\": \"".clean_unwanted_characters($description)."\"
 				}
-		}";	
-	return $json;
+		}";
+    return $json;
 }
 
 
 // To prevent JSON injection attack
 function clean_unwanted_characters($oneStr){
-	$cleaned_str = $oneStr;
+    $cleaned_str = $oneStr;
 // 	$cleaned_str = str_ireplace("\"", "/", $oneStr);
 // 	$cleaned_str = str_ireplace("\\", "/", $cleaned_str);
 // 	$cleaned_str = str_ireplace("\\b", " ", $cleaned_str);
@@ -293,29 +294,29 @@ function clean_unwanted_characters($oneStr){
 // 	$cleaned_str = str_ireplace("\t", "  ", $cleaned_str);
 // 	$cleaned_str = str_ireplace("\\u", " ", $cleaned_str);
 // 	$cleaned_str = str_ireplace("</", "<\/", $cleaned_str);
-	return $cleaned_str;
+    return $cleaned_str;
 
 }
 
 
 function isUserInputValid($userInput) {
-	if ($userInput == NULL){
-		return false;
-	}
-	
-	//Required Fields
-	//name
-	//email
-	//cyversion
-	//cysubject
-	//os
-	//description
-	
-	if($userInput['name'] != null and $userInput['email'] != null and $userInput['cyversion'] != null and 
-		$userInput['cysubject'] != null and $userInput['os'] != null and $userInput['description'] != null){
-		return true;
-	}
-	return false;
+    if ($userInput == NULL){
+        return false;
+    }
+
+    //Required Fields
+    //name
+    //email
+    //cyversion
+    //cysubject
+    //os
+    //description
+
+    if($userInput['name'] != null and $userInput['email'] != null and $userInput['cyversion'] != null and
+        $userInput['cysubject'] != null and $userInput['os'] != null and $userInput['description'] != null){
+        return true;
+    }
+    return false;
 }
 
 
@@ -328,15 +329,15 @@ function isUserInputValid($userInput) {
 // function getReportCountToday($connection, $bugReport) {
 
 // 	$bugCount = 0;
-	
+
 // 	$ip = $bugReport['ip_address'];
 
 // 	$query = "Select bug_auto_id from bugs where ip_address='$ip'  and sysdat > DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-	
+
 // 	// Run the query
 // 	if (!($result = @ mysql_query($query, $connection)))
 // 		showerror();
-				
+
 // 	$bugCount =mysql_num_rows($result);	
 
 // 	return $bugCount;
@@ -344,25 +345,25 @@ function isUserInputValid($userInput) {
 
 
 // function submitNewBug($connection, $bugReport){
-	
+
 // 	$bugCount = getReportCountToday($connection, $bugReport);
-	
+
 // 	if ($bugCount > 50){
 // 		echo "<br><br>Sorry, you report is rejected, because you can not report more than 50 bugs within 24 hours.<br><br>";
-	
+
 // 		return;
 // 	}
-	
+
 // 	// Step 1: load attached file
 // 	$file_auto_id = null;
 // 	// Load attached files first
 // 	if ($bugReport['attachedFiles'] != NULL && $bugReport['attachedFiles']['name'] != NULL){
-				
+
 // 		$name = mysql_real_escape_string($bugReport['attachedFiles']['name']);
 // 		$type = $bugReport['attachedFiles']['type'];
 // 		$md5 = $bugReport['attachedFiles']['md5'];
 // 		$content = $bugReport['attachedFiles']['fileContent'];
-		
+
 // 		$dbQuery = "INSERT INTO attached_files VALUES ";
 // 		$dbQuery .= "(0, '$name', '$type', '$content', '$md5')";
 // 		// Run the query
@@ -395,17 +396,17 @@ function isUserInputValid($userInput) {
 // 			showerror();
 // 		$reporter_auto_id = mysql_insert_id($connection);
 // 	}
-		
+
 // 	// Step 3: add a report to table "bugs"
 // 	$bug_auto_id = null;
-	
+
 // 	$cyversion = mysql_real_escape_string($bugReport['cyversion']);
 // 	$os = mysql_real_escape_string($bugReport['os']);
 // 	$subject = mysql_real_escape_string($bugReport['subject']);
 // 	$description = mysql_real_escape_string($bugReport['description']);
 // 	$ip_address = $bugReport['ip_address'];
 // 	$remote_host = $bugReport['remote_host'];
-		
+
 // 	$dbQuery = "";
 // 	if ($reporter_auto_id == NULL){
 // 		$dbQuery = "INSERT INTO bugs (cyversion, os, subject, description,ip_address,remote_host,sysdat) Values ('".
@@ -415,12 +416,12 @@ function isUserInputValid($userInput) {
 // 		$dbQuery = "INSERT INTO bugs (reporter_id, cyversion, os,subject, description, ip_address,remote_host,sysdat) Values (".
 // 		$dbQuery .= "$reporter_auto_id".","."'$cyversion',"."'$os',"."'$subject',"."'$description',"."'$ip_address',"."'$remote_host'".",now())";	
 // 	}
-	
+
 // 	// Run the query
 // 	if (!(@ mysql_query($dbQuery, $connection)))
 // 		showerror();
 // 	$bug_auto_id = mysql_insert_id($connection);
-	
+
 // 	// step 4: add file record to table "bug_file" if any
 // 	if ($file_auto_id != NULL){
 // 		$dbQuery = "INSERT INTO bug_file (bug_id, file_id) Values ($bug_auto_id, $file_auto_id)";
@@ -428,82 +429,82 @@ function isUserInputValid($userInput) {
 // 	if (!(@ mysql_query($dbQuery, $connection)))
 // 		showerror();
 // 	}
-	
+
 // 	// Step 5: Send e-mail notfication to staff about the new bug submission
 // 	//sendNotificationEmail($bugReport);	
-	
+
 // 	// If this bug report contains attachment, return a URL to access the bug 
 // 	$retValue = "";
 // 	if ($file_auto_id != null){
 // 		// There are attachment in this bug report
 // 		$retValue = "http://chianti.ucsd.edu/cyto_web/bugreport/bugreportview.php?bugid=".$bug_auto_id;
 // 	}
-	
+
 // 	return $retValue;
 // }
 
 
 function sendNotificationEmail($bugReport, $bug_id_redmine) {
-		
-	include 'cytostaff_emails.inc';
 
-	$from = $cytostaff_emails[0];
-	$to = "";
+    include 'cytostaff_emails.inc';
 
-	for ($i=1; $i<count($cytostaff_emails); $i++){
-         	$to = $to . $cytostaff_emails[$i] . " ";
-	}
-		
-	$subject = "[cytoweb-bug] New bug submitted by ".$bugReport['name'];
-	
-	$prefix  = "\n\n******* Do NOT reply to this email. This is notification only e-mail to cytostaff. ******\n".
-				" Here is the contact info of the reporter: name: ".$bugReport['name'].", e-mail: ".$bugReport['email']."\n\n";
-	
-	//$body = $prefix.$bugReport['description']."\n\nAdmin URL: http://chianti.ucsd.edu/cyto_web/bugreport/bugreportadmin.php";
-	
-	$body = $prefix.stripslashes($bugReport['description'])."\n\nBug URL: http://code.cytoscape.org/redmine/issues/".$bug_id_redmine;
-	
-	?>
-	Your bug report has been submitted and Cytoscape staff will review your report.
-	Thank you for helping to make Cytoscape better!
-	<?php
-	
-	$headers = "From: " . $from . "\r\n"; 
+    $from = $cytostaff_emails[0];
+    $to = "";
 
-	// Send e-mail to staff now
-	if (mail($to, $subject, $body, $headers)) {
-  		//echo("<p>New bug report e-mail was sent to Cytostaff!</p>");
- 	} else {
-  		echo("<p>Failed to send a notification e-mail to cytostaff...</p>");
- 	}	
+    for ($i=1; $i<count($cytostaff_emails); $i++){
+        $to = $to . $cytostaff_emails[$i] . " ";
+    }
+
+    $subject = "[cytoweb-bug] New bug submitted by ".$bugReport['name'];
+
+    $prefix  = "\n\n******* Do NOT reply to this email. This is notification only e-mail to cytostaff. ******\n".
+        " Here is the contact info of the reporter: name: ".$bugReport['name'].", e-mail: ".$bugReport['email']."\n\n";
+
+    //$body = $prefix.$bugReport['description']."\n\nAdmin URL: http://chianti.ucsd.edu/cyto_web/bugreport/bugreportadmin.php";
+
+    $body = $prefix.stripslashes($bugReport['description'])."\n\nBug URL: http://code.cytoscape.org/redmine/issues/".$bug_id_redmine;
+
+    ?>
+    Your bug report has been submitted and Cytoscape staff will review your report.
+    Thank you for helping to make Cytoscape better!
+    <?php
+
+    $headers = "From: " . $from . "\r\n";
+
+    // Send e-mail to staff now
+    if (mail($to, $subject, $body, $headers)) {
+        //echo("<p>New bug report e-mail was sent to Cytostaff!</p>");
+    } else {
+        echo("<p>Failed to send a notification e-mail to cytostaff...</p>");
+    }
 }
 
 
 function showForm($userInput) {
-	?>
-	<p style="color:red;">All fields are required, attachment is optional.</p>
+    ?>
+    <p style="color:red;">All fields are required, attachment is optional.</p>
     <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post" enctype="multipart/form-data" name="submitbug" id="form1">
         <label for="tfName">Name</label>
         <input name="tfName" type="text" id="tfName" value="<?php if (isset($userInput['name'])) echo $userInput['name']; ?>" />
         <div>
 
-        <div>
-          <label for="tfEmail">Email</label>
-          <input name="tfEmail" type="text" id="tfEmail" value="<?php if (isset($userInput['email'])) echo $userInput['email']; ?>" />
-          
-        </div>
+            <div>
+                <label for="tfEmail">Email</label>
+                <input name="tfEmail" type="text" id="tfEmail" value="<?php if (isset($userInput['email'])) echo $userInput['email']; ?>" />
 
-	<div>
-	  <label for="cyversion">Cytoscape version</label>
-	    <input name="tfCyversion" type="text" id="tfCyversion" value="<?php if (isset($userInput['cyversion'])) echo $userInput['cyversion']; ?>" />
-	</div>
+            </div>
 
-	<div>
-	  <label for="os">Operating system</label>
-	    <input name="tfOS" type="text" id="tfOS" value="<?php if (isset($userInput['os'])) echo $userInput['os']; ?>" />
-	</div>
+            <div>
+                <label for="cyversion">Cytoscape version</label>
+                <input name="tfCyversion" type="text" id="tfCyversion" value="<?php if (isset($userInput['cyversion'])) echo $userInput['cyversion']; ?>" />
+            </div>
 
-<!-- 
+            <div>
+                <label for="os">Operating system</label>
+                <input name="tfOS" type="text" id="tfOS" value="<?php if (isset($userInput['os'])) echo $userInput['os']; ?>" />
+            </div>
+
+            <!--
 	<div>
 	  <label for="os">Operating system</label>
 	  <select name="cmbOS" id="os">
@@ -513,158 +514,158 @@ function showForm($userInput) {
 	  </select>
 	</div>
  -->
- 	<div>
-	  <label for="cysubject">Subject</label>
-	    <input name="tfSubject" type="text" id="cysubject" value="<?php if (isset($userInput['cysubject'])) echo $userInput['cysubject']; ?>" />
-	</div>
+            <div>
+                <label for="cysubject">Subject</label>
+                <input name="tfSubject" type="text" id="cysubject" value="<?php if (isset($userInput['cysubject'])) echo $userInput['cysubject']; ?>" />
+            </div>
 
- 
- 
-    <div>
-            <label for="taDescription">Problem description</label>
-        </div>
-        <div>
-            <textarea name="taDescription" id="taDescription"><?php if (isset($userInput['description'])) echo $userInput['description']; ?></textarea>
+
+
+            <div>
+                <label for="taDescription">Problem description</label>
+            </div>
+            <div>
+                <textarea name="taDescription" id="taDescription"><?php if (isset($userInput['description'])) echo $userInput['description']; ?></textarea>
+            </div>
+
+            <div>
+
+                Optional, Attachments (Session files, data files, screen-shots, etc.)
+            </div>
+            <input type="file" name="attachments" id="attachments" />
+
         </div>
 
-        <div>
-
-        Optional, Attachments (Session files, data files, screen-shots, etc.)
-        </div>
-          <input type="file" name="attachments" id="attachments" />
-          
-        </div>
-        
         <!-- 
         <div>
         <input name="ufile[]" type="file" id="ufile[]" size="50" />
         </div>
          -->
-         
+
         <div>
-        <input name="tried" type="hidden" value="yes" />
+            <input name="tried" type="hidden" value="yes" />
         </div>
         <div>
-        <input type="submit" name="btnBubmit" id="btnSubmit" value="Submit" />
+            <input type="submit" name="btnBubmit" id="btnSubmit" value="Submit" />
         </div>
-      </form>
+    </form>
 
 
-	<?php 
+<?php
 }
 
 
 function getBugReportFromForm($_GET, $_POST, $_FILES, $_SERVER){
-	
-	$bugReport = NULL;
-	
-	if (isset ($_POST['tfName'])) {
-		$bugReport['name'] =$_POST['tfName']; 
-	}
 
-	if (isset ($_POST['tfEmail'])) {
-		$bugReport['email'] = addslashes($_POST['tfEmail']);
-	}
-	
-	// Get cyversion from URL
-	if (isset ($_GET['cyversion'])) {
-		$bugReport['cyversion'] = addslashes($_GET['cyversion']);
-	}
-	
-	if (isset ($_POST['tfCyversion'])) {
-		$bugReport['cyversion'] = addslashes($_POST['tfCyversion']);
-	}
+    $bugReport = NULL;
 
-	if (isset ($_POST['tfSubject'])) {
-		$bugReport['cysubject'] = addslashes($_POST['tfSubject']);
-	}
-	
-	$bugReport['os'] = getOSFromUserAgent($_SERVER);
-	
-	if (isset ($_GET['os'])) {
-		$bugReport['os'] = addslashes($_GET['os']);
-	}
-	
-	if (isset ($_POST['os'])) {
-		$bugReport['os'] = addslashes($_POST['os']);
-	}
-		
-	if (isset ($_POST['taDescription'])) {
-		$bugReport['description'] = addslashes($_POST['taDescription']);
-	}	
+    if (isset ($_POST['tfName'])) {
+        $bugReport['name'] =$_POST['tfName'];
+    }
 
-	if (isset ($_FILES['attachments'])) {
-		if ($_FILES['attachments']['name']!= NULL){ // a file is selected
-			$bugReport['attachedFiles']['name'] = $_FILES['attachments']['name'];		
-			$bugReport['attachedFiles']['type'] = $_FILES['attachments']['type'];
+    if (isset ($_POST['tfEmail'])) {
+        $bugReport['email'] = addslashes($_POST['tfEmail']);
+    }
 
-			$bugReport['attachedFiles']['md5'] = md5_file($_FILES['attachments']['tmp_name']);;		
-			
-			// Get file content
-			$fileHandle = fopen($_FILES['attachments']['tmp_name'], "r");
-			$fileContent = fread($fileHandle, $_FILES['attachments']['size']);
-			$fileContent = addslashes($fileContent);
-			
-			$bugReport['attachedFiles']['fileContent'] = $fileContent;		
-		}
-	}
-	
-	if (isset ($_SERVER['REMOTE_ADDR'])) {
-		$bugReport['ip_address'] = $_SERVER['REMOTE_ADDR'];
-		$bugReport['remote_host'] = gethostbyaddr($bugReport['ip_address']);
-	}	
-		
-	return $bugReport;
+    // Get cyversion from URL
+    if (isset ($_GET['cyversion'])) {
+        $bugReport['cyversion'] = addslashes($_GET['cyversion']);
+    }
+
+    if (isset ($_POST['tfCyversion'])) {
+        $bugReport['cyversion'] = addslashes($_POST['tfCyversion']);
+    }
+
+    if (isset ($_POST['tfSubject'])) {
+        $bugReport['cysubject'] = addslashes($_POST['tfSubject']);
+    }
+
+    $bugReport['os'] = getOSFromUserAgent($_SERVER);
+
+    if (isset ($_GET['os'])) {
+        $bugReport['os'] = addslashes($_GET['os']);
+    }
+
+    if (isset ($_POST['os'])) {
+        $bugReport['os'] = addslashes($_POST['os']);
+    }
+
+    if (isset ($_POST['taDescription'])) {
+        $bugReport['description'] = addslashes($_POST['taDescription']);
+    }
+
+    if (isset ($_FILES['attachments'])) {
+        if ($_FILES['attachments']['name']!= NULL){ // a file is selected
+            $bugReport['attachedFiles']['name'] = $_FILES['attachments']['name'];
+            $bugReport['attachedFiles']['type'] = $_FILES['attachments']['type'];
+
+            $bugReport['attachedFiles']['md5'] = md5_file($_FILES['attachments']['tmp_name']);;
+
+            // Get file content
+            $fileHandle = fopen($_FILES['attachments']['tmp_name'], "r");
+            $fileContent = fread($fileHandle, $_FILES['attachments']['size']);
+            $fileContent = addslashes($fileContent);
+
+            $bugReport['attachedFiles']['fileContent'] = $fileContent;
+        }
+    }
+
+    if (isset ($_SERVER['REMOTE_ADDR'])) {
+        $bugReport['ip_address'] = $_SERVER['REMOTE_ADDR'];
+        $bugReport['remote_host'] = gethostbyaddr($bugReport['ip_address']);
+    }
+
+    return $bugReport;
 }
 
 
 function getOSFromUserAgent($_SERVER){
-	
-	$os = "unknown";
-		
-	$userAgent = $_SERVER["HTTP_USER_AGENT"];
-	
-	if (strpos($userAgent, 'Linux') ? true : false){
-		$os = "Linux";
-	}
-	else if (strpos($userAgent, 'Macintosh') ? true : false){
-		$os = "Mac";
-	}
-	else if (strpos($userAgent, 'Windows') ? true : false){
-		$os = "Windows";	
-	}
-	
-	return $os;
+
+    $os = "unknown";
+
+    $userAgent = $_SERVER["HTTP_USER_AGENT"];
+
+    if (strpos($userAgent, 'Linux') ? true : false){
+        $os = "Linux";
+    }
+    else if (strpos($userAgent, 'Macintosh') ? true : false){
+        $os = "Mac";
+    }
+    else if (strpos($userAgent, 'Windows') ? true : false){
+        $os = "Windows";
+    }
+
+    return $os;
 }
 
 
 function getBugID($_GET, $_POST){
-	$bugid = NULL; // for edit mode only
-	
-	if (isset ($_GET['bugid'])) {
-		$bugid = ($_GET['bugid']);
-	}
-	if (isset ($_POST['bugid'])) { // hidden field
-		$bugid = ($_POST['bugid']);
-	}
-	return $bugid;	
+    $bugid = NULL; // for edit mode only
+
+    if (isset ($_GET['bugid'])) {
+        $bugid = ($_GET['bugid']);
+    }
+    if (isset ($_POST['bugid'])) { // hidden field
+        $bugid = ($_POST['bugid']);
+    }
+    return $bugid;
 }
 
 
 function getPageTitle($mode) {
-	// Set the page title based on the mode
-	if ($mode == 'new') {
-		$pageTitle = 'Submit bug to Cytoscape';
-	} 
-	else
-	{
-		if ($mode == 'edit') {
-			$pageTitle = 'Edit bug in bugs DB';
-		} else {
-			exit ('Unknown page mode, mode must be either new or edit');
-		}
-	}
-	return $pageTitle;
+    // Set the page title based on the mode
+    if ($mode == 'new') {
+        $pageTitle = 'Submit bug to Cytoscape';
+    }
+    else
+    {
+        if ($mode == 'edit') {
+            $pageTitle = 'Edit bug in bugs DB';
+        } else {
+            exit ('Unknown page mode, mode must be either new or edit');
+        }
+    }
+    return $pageTitle;
 }
 
 ?>
